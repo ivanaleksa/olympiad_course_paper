@@ -131,7 +131,7 @@ class OlympiadApp:
             self.tree.insert("", tk.END, values=row)
 
         new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, query))
-        new_record_button.pack(pady=10)
+        new_record_button.pack(pady=10, side=tk.TOP, anchor=tk.NE)
         self.new_record_button = new_record_button
 
         self.tree.pack(fill=tk.BOTH, expand=True)
