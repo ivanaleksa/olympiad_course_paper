@@ -22,7 +22,11 @@ class SqlConnection:
         return rows
 
     def insert_row(self, columns: tuple, values: list, table_name: str):
-        query = f"INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join(values)})"
+        query = f"""
+        BEGIN;
+        INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join(values)});
+        COMMIT;
+        """
         sql_query = sql.SQL(query)
         self.cursor.execute(sql_query)
 
