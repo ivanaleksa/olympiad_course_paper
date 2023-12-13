@@ -1,12 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
 from sql_connection import SqlConnection
+import re
 
 class OlympiadApp:
     def __init__(self, master):
         self.conn = SqlConnection()
         self.master = master
         self.current_table = None
+        self.new_record_button = None
+        self.new_record_window = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -45,7 +48,7 @@ class OlympiadApp:
         self.main_content.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         # Add a label to the main content area
-        self.label = tk.Label(self.main_content, text="Welcome! Choose what you need on the side bar!", font=("Arial", 24))
+        self.label = tk.Label(self.main_content, text="Welcome! Choose what you need on the side bar!", font=("Arial", 24), bg='White')
         self.label.pack(pady=10)
 
         # Add a table
@@ -55,10 +58,10 @@ class OlympiadApp:
     def participant_option(self):
         self.label.config(text="Participants page")
         self.create_and_fill_table(('ID',
-                                    'Country code',
-                                    'Name',
-                                    'Surname', 
-                                    'Birthdate'), 
+                                    'country_code',
+                                    'name',
+                                    'surname', 
+                                    'birthdate'), 
                                     'SELECT * FROM olympiad.participants')
 
     def result_option(self):
@@ -104,10 +107,17 @@ class OlympiadApp:
 
     def report_option(self):
         self.label.config(text="You selected Option 7")
+        self.destroy_existing_elements()
 
-    def create_and_fill_table(self, columns: tuple, query: str) -> None:
+    def destroy_existing_elements(self):
+        # Destroy existing table and buttons
         if self.current_table:
             self.current_table.destroy()
+        if self.new_record_button:
+            self.new_record_button.destroy()
+
+    def create_and_fill_table(self, columns: tuple, query: str) -> None:
+        self.destroy_existing_elements()
 
         # Add a table
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
@@ -120,8 +130,43 @@ class OlympiadApp:
         for row in self.conn.execute_query(query):
             self.tree.insert("", tk.END, values=row)
 
+        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, query))
+        new_record_button.pack(pady=10)
+        self.new_record_button = new_record_button
+
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.current_table = self.tree
+
+    def open_new_record_dialog(self, columns: tuple, query: str):
+        self.new_record_window = tk.Toplevel(self.master)
+        self.new_record_window.title("New Record")
+
+        label = tk.Label(self.new_record_window, text="Enter details for a new record:")
+        label.pack()
+
+        entry_vars = []
+        for label_text in columns[1:]:
+            label = tk.Label(self.new_record_window, text=label_text)
+            label.pack()
+
+            entry_var = tk.StringVar()
+            entry_vars.append(entry_var)
+
+            entry = tk.Entry(self.new_record_window, textvariable=entry_var)
+            entry.pack()
+
+        # Add a "Save" button to save the new record to the database
+        save_button = tk.Button(self.new_record_window, text="Save", command=lambda: self.save_new_record(entry_vars, columns, query))
+        save_button.pack(pady=10)
+
+    def save_new_record(self, entry_vars: list, columns:tuple, query: str):
+        entry_values = ["'" + entry_var.get() + "'" for entry_var in entry_vars]
+        table_name = re.search(r'\bFROM\s+([^\s;]+)', query, re.IGNORECASE).group(1)
+
+        self.conn.insert_row(columns, entry_values, table_name)
+
+        self.new_record_window.destroy()
+        self.create_and_fill_table(columns, query)
 
 
 

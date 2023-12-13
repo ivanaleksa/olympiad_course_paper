@@ -21,6 +21,11 @@ class SqlConnection:
 
         return rows
 
+    def insert_row(self, columns: tuple, values: list, table_name: str):
+        query = f"INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join(values)})"
+        sql_query = sql.SQL(query)
+        self.cursor.execute(sql_query)
+
     def __del__(self):
         self.cursor.close()
         self.conn.close()
