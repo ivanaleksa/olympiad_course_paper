@@ -44,6 +44,7 @@ class SqlExecutor(SqlConnection):
             sorting - a dictionary where kays are columns and values their sorting type "DESC" or "ASC", be careful with its order.
         Returns pd.DataFrame object if everything's ok.
         """
+
         sql_query = f"""
         SELECT {','.join(columns)} 
         FROM {table_name} {needed_conditions} 
@@ -52,11 +53,57 @@ class SqlExecutor(SqlConnection):
 
         return pd.read_sql(sql_query, self.conn_url)
 
-    def insert_row_query(self, columns: tuple, values: list, table_name: str):
+    def insert_row_query_builder(self, table_name: str, columns: tuple, values: list):
+        """
+        This method builds a query for inserting a new row into a table.
+        Params:
+            columns - a tuple of columns' names like in DB;
+            values - a list of values for named columns;
+            table_name - name of a table where you want to insert values.
+        """
+
         query = f"""
         BEGIN;
-        INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join(values)});
+        INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join(["'" + elem + "'" for elem in values])});
         COMMIT;
         """
+        sql_query = sql.SQL(query)
+        self.cursor.execute(sql_query)
+
+    def delete_row_query_builder(self, table_name: str, id_: str):
+        """
+        This method builds a query for deleting a row from a table using an id of the row.
+        Params:
+            table_name - name of a table where you want to delete a row;
+            id - an id of the row.
+        """
+
+        query = f"""
+        BEGIN;
+        DELETE FROM {table_name}
+        WHERE id = {id_};
+        COMMIT;
+        """
+
+        sql_query = sql.SQL(query)
+        self.cursor.execute(sql_query)
+
+    def update_row_query_builder(self, table_name: str, id_: str, values: dict):
+        """
+        This method builds a query for updating a row with id = id.
+        Params:
+            table_name - name of a table where you want to update a row;
+            id - record's id which you want to update;
+            values - a dictionary where key is a column name, value is its value.
+        """
+
+        query = f"""
+        BEGIN;
+        UPDATE {table_name}
+        SET {', '.join([key + ' = ' + "'" + values[key] + "'" for key in values])}
+        WHERE id = {id_};
+        COMMIT;
+        """
+
         sql_query = sql.SQL(query)
         self.cursor.execute(sql_query)
