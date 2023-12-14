@@ -57,53 +57,27 @@ class OlympiadApp:
 
     def participant_option(self):
         self.label.config(text="Participants page")
-        self.create_and_fill_table(('ID',
-                                    'country_code',
-                                    'name',
-                                    'surname', 
-                                    'birthdate'), 
-                                    'SELECT * FROM olympiad.participants')
+        self.create_and_fill_table('SELECT * FROM olympiad.participants')
 
     def result_option(self):
         self.label.config(text="Results page")
-        self.create_and_fill_table(('ID',
-                                    'Sport type',
-                                    'Sportground',
-                                    'Result',
-                                    'Place'),
-                                    'SELECT * FROM olympiad.start_results')
+        self.create_and_fill_table('SELECT * FROM olympiad.start_results')
 
     def schedule_option(self):
         self.label.config(text="Schedule page")
-        self.create_and_fill_table(('ID',
-                                    'Sport type',
-                                    'Date',
-                                    'Time',
-                                    'Sport ground'),
-                                    'SELECT * FROM olympiad.starts_schedule')
+        self.create_and_fill_table('SELECT * FROM olympiad.starts_schedule')
 
     def sport_types_option(self):
         self.label.config(text="Sport types")
-        self.create_and_fill_table(('ID',
-                                    'Title',
-                                    'Type',
-                                    'Desciption',
-                                    'Season'),
-                                    'SELECT * FROM olympiad.sports_type')
+        self.create_and_fill_table('SELECT * FROM olympiad.sports_type')
 
     def sportground_option(self):
         self.label.config(text="Sportgrounds page")
-        self.create_and_fill_table(('ID',
-                                    'Title',
-                                    'Placement',
-                                    'Allowed sports'),
-                                    'SELECT * FROM olympiad.sports_grounds')
+        self.create_and_fill_table('SELECT * FROM olympiad.sports_grounds')
 
     def country_option(self):
         self.label.config(text="Countries page")
-        self.create_and_fill_table(('ID',
-                                    'Title'),
-                                    'SELECT * FROM olympiad.countries')
+        self.create_and_fill_table('SELECT * FROM olympiad.countries')
 
     def report_option(self):
         self.label.config(text="You selected Option 7")
@@ -116,8 +90,10 @@ class OlympiadApp:
         if self.new_record_button:
             self.new_record_button.destroy()
 
-    def create_and_fill_table(self, columns: tuple, query: str) -> None:
+    def create_and_fill_table(self, query: str) -> None:
         self.destroy_existing_elements()
+        df = self.conn.execute_query(query)
+        columns = tuple(df.columns)
 
         # Add a table
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
@@ -127,8 +103,11 @@ class OlympiadApp:
             self.tree.column(col)        
 
         # Fill the table
-        for row in self.conn.execute_query(query):
-            self.tree.insert("", tk.END, values=row)
+        # for row in df:
+        #     self.tree.insert("", tk.END, values=row)
+
+        for index, row in df.iterrows():
+            self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
 
         new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, query))
         new_record_button.pack(pady=10, side=tk.TOP, anchor=tk.NE)
@@ -166,7 +145,7 @@ class OlympiadApp:
         self.conn.insert_row(columns, entry_values, table_name)
 
         self.new_record_window.destroy()
-        self.create_and_fill_table(columns, query)
+        self.create_and_fill_table(query)
 
 
 
