@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-from sql_connection import SqlConnection
+from sql_connection import SqlConnection, SqlExecutor
 import re
 
 class OlympiadApp:
     def __init__(self, master):
         self.conn = SqlConnection()
+        self.executor = SqlExecutor()
         self.master = master
         self.current_table = None
         self.new_record_button = None
@@ -57,27 +58,27 @@ class OlympiadApp:
 
     def participant_option(self):
         self.label.config(text="Participants page")
-        self.create_and_fill_table('SELECT * FROM olympiad.participants')
+        self.create_and_fill_table('olympiad.participants')
 
     def result_option(self):
         self.label.config(text="Results page")
-        self.create_and_fill_table('SELECT * FROM olympiad.start_results')
+        self.create_and_fill_table('olympiad.start_results')
 
     def schedule_option(self):
         self.label.config(text="Schedule page")
-        self.create_and_fill_table('SELECT * FROM olympiad.starts_schedule')
+        self.create_and_fill_table('olympiad.starts_schedule')
 
     def sport_types_option(self):
         self.label.config(text="Sport types")
-        self.create_and_fill_table('SELECT * FROM olympiad.sports_type')
+        self.create_and_fill_table('olympiad.sports_type')
 
     def sportground_option(self):
         self.label.config(text="Sportgrounds page")
-        self.create_and_fill_table('SELECT * FROM olympiad.sports_grounds')
+        self.create_and_fill_table('olympiad.sports_grounds')
 
     def country_option(self):
         self.label.config(text="Countries page")
-        self.create_and_fill_table('SELECT * FROM olympiad.countries')
+        self.create_and_fill_table('olympiad.countries')
 
     def report_option(self):
         self.label.config(text="You selected Option 7")
@@ -90,9 +91,9 @@ class OlympiadApp:
         if self.new_record_button:
             self.new_record_button.destroy()
 
-    def create_and_fill_table(self, query: str) -> None:
+    def create_and_fill_table(self, table_name: str) -> None:
         self.destroy_existing_elements()
-        df = self.conn.execute_query(query)
+        df = self.executor.select_query_builder(table_name)
         columns = tuple(df.columns)
 
         # Add a table
@@ -116,7 +117,7 @@ class OlympiadApp:
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.current_table = self.tree
 
-    def open_new_record_dialog(self, columns: tuple, query: str):
+    def open_new_record_dialog(self, columns: tuple, table_name: str):
         self.new_record_window = tk.Toplevel(self.master)
         self.new_record_window.title("New Record")
 
@@ -138,14 +139,13 @@ class OlympiadApp:
         save_button = tk.Button(self.new_record_window, text="Save", command=lambda: self.save_new_record(entry_vars, columns, query))
         save_button.pack(pady=10)
 
-    def save_new_record(self, entry_vars: list, columns:tuple, query: str):
-        entry_values = ["'" + entry_var.get() + "'" for entry_var in entry_vars]
-        table_name = re.search(r'\bFROM\s+([^\s;]+)', query, re.IGNORECASE).group(1)
+    def save_new_record(self, entry_vars: list, columns:tuple, table_name: str):
+        entry_values = [entry_var.get() for entry_var in entry_vars]
 
-        self.conn.insert_row(columns, entry_values, table_name)
+        self.executor.insert_row_query_builder(table_name, columns, entry_values)
 
         self.new_record_window.destroy()
-        self.create_and_fill_table(query)
+        self.create_and_fill_table(table_name)
 
 
 
