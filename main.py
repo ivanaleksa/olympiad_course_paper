@@ -62,11 +62,11 @@ class OlympiadApp:
 
     def result_option(self):
         self.label.config(text="Results page")
-        self.create_and_fill_table('olympiad.start_results')
+        self.create_and_fill_table('olympiad.results_table_view')
 
     def schedule_option(self):
         self.label.config(text="Schedule page")
-        self.create_and_fill_table('olympiad.starts_schedule')
+        self.create_and_fill_table('olympiad.schedule_table_view')
 
     def sport_types_option(self):
         self.label.config(text="Sport types")
@@ -101,7 +101,7 @@ class OlympiadApp:
         self.tree.column("#0", width=0, stretch=False)
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
-            self.tree.column(col)        
+            self.tree.column(col, width=100)        
 
         # Fill the table
         # for row in df:
