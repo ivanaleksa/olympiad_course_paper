@@ -110,7 +110,7 @@ class OlympiadApp:
         for index, row in df.iterrows():
             self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
 
-        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, query))
+        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, table_name))
         new_record_button.pack(pady=10, side=tk.TOP, anchor=tk.NE)
         self.new_record_button = new_record_button
 
@@ -136,7 +136,7 @@ class OlympiadApp:
             entry.pack()
 
         # Add a "Save" button to save the new record to the database
-        save_button = tk.Button(self.new_record_window, text="Save", command=lambda: self.save_new_record(entry_vars, columns, query))
+        save_button = tk.Button(self.new_record_window, text="Save", command=lambda: self.save_new_record(entry_vars, columns, table_name))
         save_button.pack(pady=10)
 
     def save_new_record(self, entry_vars: list, columns:tuple, table_name: str):
