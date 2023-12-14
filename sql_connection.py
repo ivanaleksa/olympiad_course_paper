@@ -12,7 +12,7 @@ class SqlConnection:
         return cls._instance
 
     def __init__(self):
-        self.conn_url = f"postgresql://student:student@127.0.0.1/alexandrov"
+        self.conn_url = f"postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}/{db_params['database']}"
         self.conn = psycopg2.connect(**db_params)
         self.cursor = self.conn.cursor()
 
