@@ -31,3 +31,32 @@ class SqlConnection:
     def __del__(self):
         self.cursor.close()
         self.conn.close()
+
+
+class SqlExecutor(SqlConnection):
+    def select_query_builder(self, table_name: str, columns: tuple, needed_conditions: str = '', sorting: dict = {}):
+        """
+        This method builds a query for item selection.
+        Params:
+            table_name - a name of needed table with schema, for example olympiad.participants;
+            columns - a tuple of columns for rendering;
+            needed_conditions - a string with WHOLE "WHERE" sql statement, like "WHERE id > 5";
+            sorting - a dictionary where kays are columns and values their sorting type "DESC" or "ASC", be careful with its order.
+        Returns pd.DataFrame object if everything's ok.
+        """
+        sql_query = f"""
+        SELECT {','.join(columns)} 
+        FROM {table_name} {needed_conditions} 
+        {"ORDER BY " + ', '.join([f"{key} {sorting[key]}" for key in sorting]) if sorting != {} else ''};
+        """
+
+        return pd.read_sql(sql_query, self.conn_url)
+
+    def insert_row_query(self, columns: tuple, values: list, table_name: str):
+        query = f"""
+        BEGIN;
+        INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join(values)});
+        COMMIT;
+        """
+        sql_query = sql.SQL(query)
+        self.cursor.execute(sql_query)
