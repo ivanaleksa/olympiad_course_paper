@@ -13,6 +13,8 @@ class OlympiadApp:
         self.columns_filter_button = None
         self.new_record_window = None
         self.new_sorting_button = None
+        self.delete_row_button = None
+        self.update_row_button = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -96,6 +98,10 @@ class OlympiadApp:
             self.columns_filter_button.destroy()
         if self.new_sorting_button:
             self.new_sorting_button.destroy()
+        if self.update_row_button:
+            self.update_row_button.destroy()
+        if self.delete_row_button:
+            self.delete_row_button.destroy()
 
     def create_and_fill_table(self, table_name: str) -> None:
         self.destroy_existing_elements()
@@ -103,7 +109,7 @@ class OlympiadApp:
         columns = tuple(df.columns)
 
         # Buttons
-        columns_filter_button = tk.Button(self.table_frame, text="Filter columns", command=lambda: self.open_filter_dialog(columns, table_name))
+        columns_filter_button = tk.Button(self.table_frame, text="Filter Columns", command=lambda: self.open_filter_dialog(columns, df))
         columns_filter_button.grid(row=0, column=0, pady=10, padx=5, sticky=tk.S)
         self.columns_filter_button = columns_filter_button
 
@@ -111,8 +117,16 @@ class OlympiadApp:
         new_record_button.grid(row=0, column=1, pady=10, padx=5, sticky=tk.S)
         self.new_record_button = new_record_button
 
-        new_sorting_button = tk.Button(self.table_frame, text="Sorting columns", command=lambda: self.sorting_columns_dialog(columns, table_name))
-        new_sorting_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
+        update_row_button = tk.Button(self.table_frame, text="Update Record", command=lambda: self.update_record_dialog(table_name))
+        update_row_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
+        self.update_row_button = update_row_button
+
+        delete_row_button = tk.Button(self.table_frame, text="Delete Record", command=lambda: self.delete_record_dialog(table_name))
+        delete_row_button.grid(row=0, column=3, pady=10, padx=5, sticky=tk.S)
+        self.delete_row_button = delete_row_button
+
+        new_sorting_button = tk.Button(self.table_frame, text="Sorting Columns", command=lambda: self.sorting_columns_dialog(columns, df))
+        new_sorting_button.grid(row=0, column=4, pady=10, padx=5, sticky=tk.S)
         self.new_sorting_button = new_sorting_button
 
         # Add a table
@@ -126,18 +140,22 @@ class OlympiadApp:
             self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
 
         # Treeview
-        self.tree.grid(row=1, column=0, columnspan=3, pady=10, padx=5, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.tree.grid(row=1, column=0, columnspan=5, pady=10, padx=5, sticky=tk.W+tk.E+tk.N+tk.S)
 
         # Configure row and column weights to make them fill the available space
         self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.columnconfigure(1, weight=1)
         self.table_frame.columnconfigure(2, weight=1)
+        self.table_frame.columnconfigure(3, weight=1)
+        self.table_frame.columnconfigure(4, weight=1)
         self.table_frame.rowconfigure(1, weight=1)
 
         # Set uniform size for buttons
         self.table_frame.grid_columnconfigure(0, uniform="buttons")
         self.table_frame.grid_columnconfigure(1, uniform="buttons")
         self.table_frame.grid_columnconfigure(2, uniform="buttons")
+        self.table_frame.grid_columnconfigure(3, uniform="buttons")
+        self.table_frame.grid_columnconfigure(4, uniform="buttons")
 
         self.current_table = self.tree
 
@@ -171,10 +189,16 @@ class OlympiadApp:
         self.new_record_window.destroy()
         self.create_and_fill_table(table_name)
 
-    def open_filter_dialog(self, columns: tuple, table_name: str):
+    def open_filter_dialog(self, columns: tuple, df):
         pass
 
-    def sorting_columns_dialog(self, columns: tuple, table_name: str):
+    def sorting_columns_dialog(self, columns: tuple, df):
+        pass
+
+    def update_record_dialog(self, table_name: str):
+        pass
+
+    def delete_record_dialog(self, table_name: str):
         pass
 
 
