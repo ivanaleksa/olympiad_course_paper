@@ -10,7 +10,9 @@ class OlympiadApp:
         self.master = master
         self.current_table = None
         self.new_record_button = None
+        self.columns_filter_button = None
         self.new_record_window = None
+        self.new_sorting_button = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -90,11 +92,28 @@ class OlympiadApp:
             self.current_table.destroy()
         if self.new_record_button:
             self.new_record_button.destroy()
+        if self.columns_filter_button:
+            self.columns_filter_button.destroy()
+        if self.new_sorting_button:
+            self.new_sorting_button.destroy()
 
     def create_and_fill_table(self, table_name: str) -> None:
         self.destroy_existing_elements()
         df = self.executor.select_query_builder(table_name)
         columns = tuple(df.columns)
+
+        # Buttons
+        columns_filter_button = tk.Button(self.table_frame, text="Filter columns", command=lambda: self.open_filter_dialog(columns, table_name))
+        columns_filter_button.grid(row=0, column=0, pady=10, padx=5, sticky=tk.S)
+        self.columns_filter_button = columns_filter_button
+
+        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, table_name))
+        new_record_button.grid(row=0, column=1, pady=10, padx=5, sticky=tk.S)
+        self.new_record_button = new_record_button
+
+        new_sorting_button = tk.Button(self.table_frame, text="Sorting columns", command=lambda: self.sorting_columns_dialog(columns, table_name))
+        new_sorting_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
+        self.new_sorting_button = new_sorting_button
 
         # Add a table
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
@@ -103,18 +122,23 @@ class OlympiadApp:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=100)        
 
-        # Fill the table
-        # for row in df:
-        #     self.tree.insert("", tk.END, values=row)
-
         for index, row in df.iterrows():
             self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
 
-        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, table_name))
-        new_record_button.pack(pady=10, side=tk.TOP, anchor=tk.NE)
-        self.new_record_button = new_record_button
+        # Treeview
+        self.tree.grid(row=1, column=0, columnspan=3, pady=10, padx=5, sticky=tk.W+tk.E+tk.N+tk.S)
 
-        self.tree.pack(fill=tk.BOTH, expand=True)
+        # Configure row and column weights to make them fill the available space
+        self.table_frame.columnconfigure(0, weight=1)
+        self.table_frame.columnconfigure(1, weight=1)
+        self.table_frame.columnconfigure(2, weight=1)
+        self.table_frame.rowconfigure(1, weight=1)
+
+        # Set uniform size for buttons
+        self.table_frame.grid_columnconfigure(0, uniform="buttons")
+        self.table_frame.grid_columnconfigure(1, uniform="buttons")
+        self.table_frame.grid_columnconfigure(2, uniform="buttons")
+
         self.current_table = self.tree
 
     def open_new_record_dialog(self, columns: tuple, table_name: str):
@@ -146,6 +170,12 @@ class OlympiadApp:
 
         self.new_record_window.destroy()
         self.create_and_fill_table(table_name)
+
+    def open_filter_dialog(self, columns: tuple, table_name: str):
+        pass
+
+    def sorting_columns_dialog(self, columns: tuple, table_name: str):
+        pass
 
 
 
