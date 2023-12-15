@@ -20,6 +20,7 @@ class OlympiadApp:
 
         self.new_record_window = None
         self.new_update_window = None
+        self.new_delete_window = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -238,7 +239,31 @@ class OlympiadApp:
         self.create_and_fill_table(table_name)
 
     def delete_record_dialog(self, table_name: str):
-        pass
+        self.new_delete_window = tk.Toplevel(self.master)
+        self.new_delete_window.title('Delete Record')
+
+        label = tk.Label(self.new_delete_window, text="If you want to delete several records just write their ids with comma, like 19,20,21")
+        label.pack()
+
+        label = tk.Label(self.new_delete_window, text="Enter deleting row's id:")
+        label.pack()
+
+        entry_id_var = tk.StringVar()
+        entry = tk.Entry(self.new_delete_window, textvariable=entry_id_var)
+        entry.pack()
+
+        save_button = tk.Button(self.new_delete_window, text="Delete", command=lambda: self.delete_record(table_name, entry_id_var))
+        save_button.pack(pady=10)
+
+    def delete_record(self, table_name: str, entry_id_var):
+        id_ = entry_id_var.get()
+        if ',' in id_:
+            for current_id in id_.split(','):
+                self.executor.delete_row_query_builder(table_name, current_id)
+        else:
+            self.executor.delete_row_query_builder(table_name, id_)
+        self.new_delete_window.destroy()
+        self.create_and_fill_table(table_name)
 
 
 
