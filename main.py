@@ -21,6 +21,7 @@ class OlympiadApp:
         self.new_record_window = None
         self.new_update_window = None
         self.new_delete_window = None
+        self.new_sorting_window = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -131,7 +132,7 @@ class OlympiadApp:
         delete_row_button.grid(row=0, column=3, pady=10, padx=5, sticky=tk.S)
         self.delete_row_button = delete_row_button
 
-        new_sorting_button = tk.Button(self.table_frame, text="Sorting Columns", command=lambda: self.sorting_columns_dialog(columns, df))
+        new_sorting_button = tk.Button(self.table_frame, text="Sorting Columns", command=lambda: self.sorting_columns_dialog(table_name, columns))
         new_sorting_button.grid(row=0, column=4, pady=10, padx=5, sticky=tk.S)
         self.new_sorting_button = new_sorting_button
 
@@ -198,8 +199,43 @@ class OlympiadApp:
     def open_filter_dialog(self, columns: tuple, df):
         pass
 
-    def sorting_columns_dialog(self, columns: tuple, df):
-        pass
+    def sorting_columns_dialog(self, table_name: str, columns: tuple):
+        self.new_sorting_window = tk.Toplevel(self.master)
+        self.new_sorting_window.title("Sorting fields")
+
+        label = tk.Label(self.new_sorting_window, text="If you want to sort with ceartain fields write theit sort number (first'll be first)\nand choose the sorting option.\nElse keep it empty")
+        label.pack()
+
+        entry_vars = []
+        combobox_vars = {}
+
+        for label_text in columns[1:]:
+            label = tk.Label(self.new_sorting_window, text=label_text)
+            label.pack()
+
+            entry_var = tk.StringVar()
+            entry_vars.append(entry_var)
+
+            entry = tk.Entry(self.new_sorting_window, textvariable=entry_var)
+            entry.pack()
+
+            combobox_var = tk.StringVar()
+            combobox_vars[label_text] = combobox_var
+
+            options = ['ASC', 'DESC']
+            combobox = ttk.Combobox(self.new_sorting_window, textvariable=combobox_var, values=options)
+            combobox.pack()
+
+        sort_button = tk.Button(self.new_sorting_window, text="Sort", command=lambda: self.sort_records(table_name, entry_vars, combobox_vars, columns))
+        sort_button.pack(pady=10)
+
+    def sort_records(self, table_name: str, entry_vars, combobox_vars, columns: tuple):
+        entry_values = {entry_vars[i].get(): columns[i + 1] for i in range(len(entry_vars)) if entry_vars[i].get() != ''}
+        combobox_values = {elem: combobox_vars[elem].get() for elem in combobox_vars}
+        
+        self.new_sorting_window.destroy()
+        self.create_and_fill_table(table_name, sorting={entry_values[indx]: combobox_values[entry_values[indx]] for indx in dict(sorted(entry_values.items(), key=lambda x: int(x[0])))})
+
 
     def update_record_dialog(self, table_name: str, columns: tuple):
         self.new_update_window = tk.Toplevel(self.master)
