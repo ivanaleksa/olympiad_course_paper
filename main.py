@@ -7,14 +7,19 @@ class OlympiadApp:
     def __init__(self, master):
         self.conn = SqlConnection()
         self.executor = SqlExecutor()
+
         self.master = master
+
         self.current_table = None
+
         self.new_record_button = None
         self.columns_filter_button = None
-        self.new_record_window = None
         self.new_sorting_button = None
         self.delete_row_button = None
         self.update_row_button = None
+
+        self.new_record_window = None
+        self.new_update_window = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -103,9 +108,9 @@ class OlympiadApp:
         if self.delete_row_button:
             self.delete_row_button.destroy()
 
-    def create_and_fill_table(self, table_name: str) -> None:
+    def create_and_fill_table(self, table_name: str, columns_into_table: tuple = None, needed_conditions: str = '', sorting: dict = {}, all_col: bool = True) -> None:
         self.destroy_existing_elements()
-        df = self.executor.select_query_builder(table_name)
+        df = self.executor.select_query_builder(table_name, columns_into_table, needed_conditions, sorting, all_col)
         columns = tuple(df.columns)
 
         # Buttons
@@ -117,7 +122,7 @@ class OlympiadApp:
         new_record_button.grid(row=0, column=1, pady=10, padx=5, sticky=tk.S)
         self.new_record_button = new_record_button
 
-        update_row_button = tk.Button(self.table_frame, text="Update Record", command=lambda: self.update_record_dialog(table_name))
+        update_row_button = tk.Button(self.table_frame, text="Update Record", command=lambda: self.update_record_dialog(table_name, columns))
         update_row_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
         self.update_row_button = update_row_button
 
@@ -195,8 +200,42 @@ class OlympiadApp:
     def sorting_columns_dialog(self, columns: tuple, df):
         pass
 
-    def update_record_dialog(self, table_name: str):
-        pass
+    def update_record_dialog(self, table_name: str, columns: tuple):
+        self.new_update_window = tk.Toplevel(self.master)
+        self.new_update_window.title("Update Record")
+
+        label = tk.Label(self.new_update_window, text="If you don't want to change some fields just keep it empty.")
+        label.pack()
+
+        label = tk.Label(self.new_update_window, text="Enter updating row's id:")
+        label.pack()
+
+        entry_id_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=entry_id_var)
+        entry.pack()
+
+        entry_vars = []
+        for label_text in columns[1:]:
+            label = tk.Label(self.new_update_window, text=label_text)
+            label.pack()
+
+            entry_var = tk.StringVar()
+            entry_vars.append(entry_var)
+
+            entry = tk.Entry(self.new_update_window, textvariable=entry_var)
+            entry.pack()
+
+        save_button = tk.Button(self.new_update_window, text="Update", command=lambda: self.update_record(table_name, entry_id_var, entry_vars, columns))
+        save_button.pack(pady=10)
+
+    def update_record(self, table_name: str, entry_id_var, entry_vars, columns: tuple):
+        id_ = entry_id_var.get()
+        values = {columns[i + 1]: entry_vars[i].get() for i in range(len(columns) - 1) if entry_vars[i].get() != ''}
+
+        self.executor.update_row_query_builder(table_name, id_, values)
+
+        self.new_update_window.destroy()
+        self.create_and_fill_table(table_name)
 
     def delete_record_dialog(self, table_name: str):
         pass
