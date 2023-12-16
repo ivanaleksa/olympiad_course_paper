@@ -17,6 +17,7 @@ class OlympiadApp:
         self.new_sorting_button = None
         self.delete_row_button = None
         self.update_row_button = None
+        self.refresh_button = None
 
         self.new_record_window = None
         self.new_update_window = None
@@ -137,6 +138,10 @@ class OlympiadApp:
         new_sorting_button.grid(row=0, column=4, pady=10, padx=5, sticky=tk.S)
         self.new_sorting_button = new_sorting_button
 
+        refresh_button = tk.Button(self.table_frame, text="Refresh Page", command=lambda: self.create_and_fill_table(table_name))
+        refresh_button.grid(row=0, column=5, pady=10, padx=5, sticky=tk.S)
+        self.refresh_button = refresh_button
+
         # Add a table
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
         self.tree.column("#0", width=0, stretch=False)
@@ -148,7 +153,7 @@ class OlympiadApp:
             self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
 
         # Treeview
-        self.tree.grid(row=1, column=0, columnspan=5, pady=10, padx=5, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.tree.grid(row=1, column=0, columnspan=6, pady=10, padx=5, sticky=tk.W+tk.E+tk.N+tk.S)
 
         # Configure row and column weights to make them fill the available space
         self.table_frame.columnconfigure(0, weight=1)
@@ -156,6 +161,7 @@ class OlympiadApp:
         self.table_frame.columnconfigure(2, weight=1)
         self.table_frame.columnconfigure(3, weight=1)
         self.table_frame.columnconfigure(4, weight=1)
+        self.table_frame.columnconfigure(5, weight=1)
         self.table_frame.rowconfigure(1, weight=1)
 
         # Set uniform size for buttons
@@ -164,6 +170,7 @@ class OlympiadApp:
         self.table_frame.grid_columnconfigure(2, uniform="buttons")
         self.table_frame.grid_columnconfigure(3, uniform="buttons")
         self.table_frame.grid_columnconfigure(4, uniform="buttons")
+        self.table_frame.grid_columnconfigure(5, uniform="buttons")
 
         self.current_table = self.tree
 
