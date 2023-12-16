@@ -22,6 +22,7 @@ class OlympiadApp:
         self.new_update_window = None
         self.new_delete_window = None
         self.new_sorting_window = None
+        self.new_filter_window = None
 
         # adjust the main window
         master.title("Olympiad App")
@@ -116,7 +117,7 @@ class OlympiadApp:
         columns = tuple(df.columns)
 
         # Buttons
-        columns_filter_button = tk.Button(self.table_frame, text="Filter Columns", command=lambda: self.open_filter_dialog(columns, df))
+        columns_filter_button = tk.Button(self.table_frame, text="Filter Columns", command=lambda: self.open_filter_dialog(table_name, columns, df))
         columns_filter_button.grid(row=0, column=0, pady=10, padx=5, sticky=tk.S)
         self.columns_filter_button = columns_filter_button
 
@@ -196,8 +197,60 @@ class OlympiadApp:
         self.new_record_window.destroy()
         self.create_and_fill_table(table_name)
 
-    def open_filter_dialog(self, columns: tuple, df):
-        pass
+    def open_filter_dialog(self, table_name: str, columns: tuple, df):
+        self.new_filter_window = tk.Toplevel(self.master)
+        self.new_filter_window.title("Filter records and columns")
+
+        label = tk.Label(self.new_filter_window, text="""Set checkbox true if you want to render this columns.
+            If a columns is numeric field you can filter it as: >, >=, <, <=, = (example: > 10)
+            If the column is text field just write needed substring for searching""")
+        label.pack()
+
+        entry_vars = []
+        checkbox_vars = []
+
+        for label_text in columns:
+            label = tk.Label(self.new_filter_window, text=label_text)
+            label.pack()
+
+            entry_var = tk.StringVar()
+            entry_vars.append(entry_var)
+
+            checkbox_var = tk.BooleanVar(value=True)
+            checkbox = tk.Checkbutton(self.new_filter_window, variable=checkbox_var)
+            checkbox_vars.append(checkbox_var)
+            checkbox.pack()
+
+            entry = tk.Entry(self.new_filter_window, textvariable=entry_var)
+            entry.pack()
+
+        filter_button = tk.Button(self.new_filter_window, text="Filter", command=lambda: self.filter_records(table_name, entry_vars, checkbox_vars, columns))
+        filter_button.pack(pady=10)
+
+    def filter_records(self, table_name, entry_vars, checkbox_vars, columns):
+        entry_values = {columns[i]: entry_vars[i].get() for i in range(len(entry_vars))}
+        checkbox_values = {columns[i]: checkbox_vars[i].get() for i in range(len(entry_vars))}
+        
+        needed_columns = [column for column in checkbox_values if checkbox_values[column]]
+        needed_conditions = "WHERE " + self.generate_condition(entry_values) if not all([entry_values[column] == '' for column in entry_values]) else ''
+
+        self.new_filter_window.destroy()
+        self.create_and_fill_table(table_name, columns_into_table=needed_columns, needed_conditions=needed_conditions, all_col=False)
+
+    @staticmethod
+    def generate_condition(entry_values: dict) -> str:
+        result = []
+        for column in entry_values.keys():
+            if entry_values[column] == '':
+                continue
+            string = ''
+            if any(it in entry_values[column] for it in ('>', '>=', '=', '<', '<=')):
+                string = column + ' ' + entry_values[column]
+            else:
+                string = column + " ~ '.*" + entry_values[column] + ".*'"
+            result.append(string)
+        return ' AND '.join(result)
+
 
     def sorting_columns_dialog(self, table_name: str, columns: tuple):
         self.new_sorting_window = tk.Toplevel(self.master)
