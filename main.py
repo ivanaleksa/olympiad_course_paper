@@ -111,6 +111,8 @@ class OlympiadApp:
             self.update_row_button.destroy()
         if self.delete_row_button:
             self.delete_row_button.destroy()
+        if self.refresh_button:
+            self.refresh_button.destroy()
 
     def create_and_fill_table(self, table_name: str, columns_into_table: tuple = None, needed_conditions: str = '', sorting: dict = {}, all_col: bool = True) -> None:
         self.destroy_existing_elements()
@@ -138,7 +140,7 @@ class OlympiadApp:
         new_sorting_button.grid(row=0, column=4, pady=10, padx=5, sticky=tk.S)
         self.new_sorting_button = new_sorting_button
 
-        refresh_button = tk.Button(self.table_frame, text="Refresh Page", command=lambda: self.create_and_fill_table(table_name))
+        refresh_button = tk.Button(self.table_frame, text="Refresh Page", bg="#429ef5", command=lambda: self.create_and_fill_table(table_name))
         refresh_button.grid(row=0, column=5, pady=10, padx=5, sticky=tk.S)
         self.refresh_button = refresh_button
 
