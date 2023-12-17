@@ -69,7 +69,7 @@ class SqlExecutor(SqlConnection):
 
         query = f"""
         BEGIN;
-        INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join([str(elem) for elem in values])});
+        INSERT INTO {table_name} ({', '.join(columns[1:])}) VALUES ({', '.join([str(elem) if type(elem) is not str else "'" + elem + "'" for elem in values])});
         COMMIT;
         """
         sql_query = sql.SQL(query)

@@ -155,10 +155,12 @@ class OlympiadApp:
             'olympiad.schedule_table_view': self.open_new_record_schedule_dialog
         }
         appropriate_functions_update = {
-            'olympiad.results_table_view': self.open_update_results_dialog
+            'olympiad.results_table_view': self.open_update_results_dialog,
+            'olympiad.schedule_table_view': self.open_update_schedule_dialog
         }
         appropriate_functions_delete = {
-            'olympiad.results_table_view': self.open_delete_results_dialog
+            'olympiad.results_table_view': self.open_delete_results_dialog,
+            'olympiad.schedule_table_view': self.open_delete_results_dialog
         }
         df = self.executor.select_query_builder(table_name, columns_into_table, needed_conditions, sorting, all_col)
         columns = tuple(df.columns)
@@ -396,7 +398,140 @@ class OlympiadApp:
         self.create_and_fill_table(table_name)
 
     def open_new_record_schedule_dialog(self, columns:tuple, table_name: str):
-        print("Hello")
+        self.new_record_window = tk.Toplevel(self.master)
+        self.new_record_window.title("New Record")
+
+        label = tk.Label(self.new_record_window, text="Enter details for a new record:")
+        label.pack()
+
+        """Enter fields for filling"""
+        all_sport_type_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_type').iterrows()]
+        all_sport_ground_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_grounds').iterrows()]
+
+        label = tk.Label(self.new_record_window, text="Choose sport type:")
+        label.pack()
+        sport_type_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_record_window, textvariable=sport_type_var, values=all_sport_type_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_record_window, text="Choose sport ground:")
+        label.pack()
+        sport_ground_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_record_window, textvariable=sport_ground_var, values=all_sport_ground_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_record_window, text="Start Date")
+        label.pack()
+        start_date_var = tk.StringVar()
+        entry = tk.Entry(self.new_record_window, textvariable=start_date_var)
+        entry.pack()
+
+        label = tk.Label(self.new_record_window, text="Start Time")
+        label.pack()
+        start_time_var = tk.StringVar()
+        entry = tk.Entry(self.new_record_window, textvariable=start_time_var)
+        entry.pack()
+
+        insert_button = tk.Button(self.new_record_window, text="Insert", command=lambda: self.insert_schedule_record(table_name, sport_type_var, sport_ground_var, start_date_var, start_time_var))
+        insert_button.pack(pady=10)
+
+    def insert_schedule_record(self, table_name, sport_type_var, sport_ground_var, start_date_var, start_time_var):
+        sport_type_id = sport_type_var.get().split(': ')[0]
+        sport_ground_id = sport_ground_var.get().split(': ')[0]
+        start_date = start_date_var.get()
+        start_time = start_time_var.get()
+
+        self.executor.insert_row_for_result('olympiad.starts_schedule', ('id', 'sport_type_id', 'start_date', 'start_time', 'sport_ground_id'), [sport_type_id, start_date, start_time, sport_ground_id])
+
+        self.new_record_window.destroy()
+        self.create_and_fill_table(table_name)
+
+    def open_update_schedule_dialog(self, table_name, columns):
+        self.new_update_window = tk.Toplevel(self.master)
+        self.new_update_window.title("Update Record")
+
+        label = tk.Label(self.new_update_window, text="If you don't want to change some fields just keep it empty.")
+        label.pack()
+
+        label = tk.Label(self.new_update_window, text="Enter updating row's id:")
+        label.pack()
+
+        entry_id_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=entry_id_var)
+        entry.pack()
+
+        """Enter fields for filling"""
+        all_sport_type_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_type').iterrows()]
+        all_sport_ground_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_grounds').iterrows()]
+
+        label = tk.Label(self.new_update_window, text="Choose sport type:")
+        label.pack()
+        sport_type_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_update_window, textvariable=sport_type_var, values=all_sport_type_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_update_window, text="Choose sport ground:")
+        label.pack()
+        sport_ground_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_update_window, textvariable=sport_ground_var, values=all_sport_ground_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_update_window, text="Start Date")
+        label.pack()
+        start_date_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=start_date_var)
+        entry.pack()
+
+        label = tk.Label(self.new_update_window, text="Start Time")
+        label.pack()
+        start_time_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=start_time_var)
+        entry.pack()
+
+        insert_button = tk.Button(self.new_update_window, text="Insert", command=lambda: self.update_schedule_record(table_name, entry_id_var, sport_type_var, sport_ground_var, start_date_var, start_time_var))
+        insert_button.pack(pady=10)
+
+    def update_schedule_record(self, table_name, entry_id_var, sport_type_var, sport_ground_var, start_date_var, start_time_var):
+        id_ = entry_id_var.get()
+        sport_type_id = sport_type_var.get().split(': ')[0]
+        sport_ground_id = sport_ground_var.get().split(': ')[0]
+        start_date = start_date_var.get()
+        start_time = start_time_var.get()
+
+        values = {'sport_type_id': sport_type_id, 'sport_ground_id': sport_ground_id, 'start_date': start_date, 'start_time': start_time}
+        values = {key: values[key] for key in values if values[key] != ''}
+
+        self.executor.update_row_for_result('olympiad.starts_schedule', id_, values)
+
+        self.new_update_window.destroy()
+        self.create_and_fill_table(table_name)
+
+    def open_delete_results_dialog(self, table_name: str):
+        self.new_delete_window = tk.Toplevel(self.master)
+        self.new_delete_window.title('Delete Record')
+
+        label = tk.Label(self.new_delete_window, text="If you want to delete several records just write their ids with comma, like 19,20,21")
+        label.pack()
+
+        label = tk.Label(self.new_delete_window, text="Enter deleting row's id:")
+        label.pack()
+
+        entry_id_var = tk.StringVar()
+        entry = tk.Entry(self.new_delete_window, textvariable=entry_id_var)
+        entry.pack()
+
+        save_button = tk.Button(self.new_delete_window, text="Delete", command=lambda: self.delete_schedule_record(table_name, entry_id_var))
+        save_button.pack(pady=10)
+
+    def delete_schedule_record(self, table_name, entry_id_var):
+        id_ = entry_id_var.get()
+        if ',' in id_:
+            for current_id in id_.split(','):
+                self.executor.delete_row_query_builder('olympiad.starts_schedule', current_id)
+        else:
+            self.executor.delete_row_query_builder('olympiad.starts_schedule', id_)
+        self.new_delete_window.destroy()
+        self.create_and_fill_table(table_name)
 
     def save_new_record(self, entry_vars: list, columns:tuple, table_name: str):
         entry_values = [entry_var.get() for entry_var in entry_vars]
