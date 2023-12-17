@@ -212,7 +212,7 @@ class OlympiadApp:
         }
         appropriate_functions_delete = {
             'olympiad.results_table_view': self.open_delete_results_dialog,
-            'olympiad.schedule_table_view': self.open_delete_results_dialog
+            'olympiad.schedule_table_view': self.open_delete_schedule_dialog
         }
         df = self.executor.select_query_builder(table_name, columns_into_table, needed_conditions, sorting, all_col)
         columns = tuple(df.columns)
@@ -558,7 +558,7 @@ class OlympiadApp:
         self.new_update_window.destroy()
         self.create_and_fill_table(table_name)
 
-    def open_delete_results_dialog(self, table_name: str):
+    def open_delete_schedule_dialog(self, table_name: str):
         self.new_delete_window = tk.Toplevel(self.master)
         self.new_delete_window.title('Delete Record')
 
