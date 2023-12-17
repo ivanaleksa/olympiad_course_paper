@@ -87,7 +87,7 @@ class SqlExecutor(SqlConnection):
         query = f"""
         BEGIN;
         UPDATE {table_name}
-        SET {', '.join([key + ' = ' + str(values[key]) for key in values])}
+        SET {', '.join([key + ' = ' + str(values[key]) if type(values[key]) is int else key + " = '" + str(values[key]) + "'" for key in values])}
         WHERE id = {id_};
         COMMIT;
         """
