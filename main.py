@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from sql_connection import SqlConnection, SqlExecutor
 import re
+from datetime import datetime
 
 class OlympiadApp:
     def __init__(self, master):
@@ -21,6 +22,7 @@ class OlympiadApp:
         self.medal_per_country_button = None
         self.participant_results_button = None
         self.schedule_of_starts_button = None
+        self.save_csv_button = None
 
         self.new_record_window = None
         self.new_update_window = None
@@ -98,7 +100,7 @@ class OlympiadApp:
 
     def report_option(self):
         self.label.config(text="Report Generator")
-        self.reports_page()
+        self.reports_page('olympiad.medals_per_cuntries')
 
     def destroy_existing_elements(self):
         # Destroy existing table and buttons
@@ -122,21 +124,50 @@ class OlympiadApp:
             self.participant_results_button.destroy()
         if self.schedule_of_starts_button:
             self.schedule_of_starts_button.destroy()
+        if self.save_csv_button:
+            self.save_csv_button.destroy()
 
-    def reports_page(self):
+    def reports_page(self, table_name: str, columns_into_table: tuple = None, needed_conditions: str = '', sorting: dict = {}, all_col: bool = True):
         self.destroy_existing_elements()
 
-        medal_per_country_button = tk.Button(self.table_frame, text="Medals Per Country")
-        medal_per_country_button.grid(row=0, column=0, pady=10, padx=5, sticky=tk.S)
+        df = self.executor.select_query_builder(table_name, columns_into_table, needed_conditions, sorting, all_col)
+        columns = tuple(df.columns)
+
+        medal_per_country_button = tk.Button(self.table_frame, text="Medals Per Country", command=lambda: self.reports_page('olympiad.medals_per_cuntries'))
+        medal_per_country_button.grid(row=0, column=0, pady=10, padx=5, sticky="nsew")
         self.medal_per_country_button = medal_per_country_button
 
-        participant_results_button = tk.Button(self.table_frame, text="Participant Results")
-        participant_results_button.grid(row=0, column=1, pady=10, padx=5, sticky=tk.S)
+        participant_results_button = tk.Button(self.table_frame, text="Participant Results", command=lambda: self.reports_page('olympiad.participant_results'))
+        participant_results_button.grid(row=0, column=1, pady=10, padx=5, sticky="nsew")
         self.participant_results_button = participant_results_button
 
-        schedule_of_starts_button = tk.Button(self.table_frame, text="Schedule Of Starts")
-        schedule_of_starts_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
+        schedule_of_starts_button = tk.Button(self.table_frame, text="Schedule Of Starts", command=lambda: self.reports_page('olympiad.start_schedule_on_date'))
+        schedule_of_starts_button.grid(row=0, column=2, pady=10, padx=5, sticky="nsew")
         self.schedule_of_starts_button = schedule_of_starts_button
+
+        new_sorting_button = tk.Button(self.table_frame, text="Sorting Columns", command=lambda: self.sorting_columns_dialog(table_name, columns))
+        new_sorting_button.grid(row=1, column=0, pady=10, padx=5, sticky="nsew")
+        self.new_sorting_button = new_sorting_button
+
+        save_csv_button = tk.Button(self.table_frame, text="Save As CSV", command=lambda: self.save_to_csv(df))
+        save_csv_button.grid(row=1, column=1, pady=10, padx=5, sticky="nsew")
+        self.save_csv_button = save_csv_button
+
+        columns_filter_button = tk.Button(self.table_frame, text="Filter Columns", command=lambda: self.open_filter_dialog(table_name, columns, df))
+        columns_filter_button.grid(row=1, column=2, pady=10, padx=5, sticky="nsew")
+        self.columns_filter_button = columns_filter_button
+
+         # Add a table
+        self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
+        self.tree.column("#0", width=0, stretch=False)
+        for col in self.tree["columns"]:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=100)
+
+        for index, row in df.iterrows():
+            self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
+
+        self.tree.grid(row=2, column=0, columnspan=3, pady=10, padx=5, sticky="nsew")
 
         self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.columnconfigure(1, weight=1)
@@ -146,6 +177,10 @@ class OlympiadApp:
         self.table_frame.grid_columnconfigure(1, uniform="buttons")
         self.table_frame.grid_columnconfigure(2, uniform="buttons")
 
+        self.current_table = self.tree
+
+    def save_to_csv(self, df):
+        df.to_csv(f"csv_files/{datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}", sep=';')
 
 
     def create_and_fill_table(self, table_name: str, columns_into_table: tuple = None, needed_conditions: str = '', sorting: dict = {}, all_col: bool = True) -> None:
@@ -578,11 +613,14 @@ class OlympiadApp:
         needed_columns = [column for column in checkbox_values if checkbox_values[column]]
         needed_conditions = "WHERE " + self.generate_condition(entry_values) if not all([entry_values[column] == '' for column in entry_values]) else ''
 
-        self.new_filter_window.destroy()
-        self.create_and_fill_table(table_name, columns_into_table=needed_columns, needed_conditions=needed_conditions, all_col=False)
+        if table_name in ("olympiad.medals_per_cuntries", "olympiad.participant_results", "olympiad.start_schedule_on_date"):
+            self.new_filter_window.destroy()
+            self.reports_page(table_name, columns_into_table=needed_columns, needed_conditions=needed_conditions, all_col=False)
+        else:
+            self.new_filter_window.destroy()
+            self.create_and_fill_table(table_name, columns_into_table=needed_columns, needed_conditions=needed_conditions, all_col=False)
 
-    @staticmethod
-    def generate_condition(entry_values: dict) -> str:
+    def generate_condition(self, entry_values: dict) -> str:
         result = []
         for column in entry_values.keys():
             if entry_values[column] == '':
@@ -590,10 +628,19 @@ class OlympiadApp:
             string = ''
             if any(it in entry_values[column] for it in ('>', '>=', '=', '<', '<=')):
                 string = column + ' ' + entry_values[column]
+            elif self.is_valid_date(entry_values[column]):
+                string =  column + " = '" + entry_values[column] + "'"
             else:
                 string = column + " ~ '.*" + entry_values[column] + ".*'"
             result.append(string)
         return ' AND '.join(result)
+
+    def is_valid_date(self, date_string, date_format='%Y-%m-%d'):
+        try:
+            datetime.strptime(date_string, date_format)
+            return True
+        except ValueError:
+            return False
 
 
     def sorting_columns_dialog(self, table_name: str, columns: tuple):
@@ -630,8 +677,12 @@ class OlympiadApp:
         entry_values = {entry_vars[i].get(): columns[i + 1] for i in range(len(entry_vars)) if entry_vars[i].get() != ''}
         combobox_values = {elem: combobox_vars[elem].get() for elem in combobox_vars}
         
-        self.new_sorting_window.destroy()
-        self.create_and_fill_table(table_name, sorting={entry_values[indx]: combobox_values[entry_values[indx]] for indx in dict(sorted(entry_values.items(), key=lambda x: int(x[0])))})
+        if table_name in ("olympiad.medals_per_cuntries", "olympiad.participant_results", "olympiad.start_schedule_on_date"):
+            self.new_sorting_window.destroy()
+            self.reports_page(table_name, sorting={entry_values[indx]: combobox_values[entry_values[indx]] for indx in dict(sorted(entry_values.items(), key=lambda x: int(x[0])))})
+        else:
+            self.new_sorting_window.destroy()
+            self.create_and_fill_table(table_name, sorting={entry_values[indx]: combobox_values[entry_values[indx]] for indx in dict(sorted(entry_values.items(), key=lambda x: int(x[0])))})
 
 
     def update_record_dialog(self, table_name: str, columns: tuple):
