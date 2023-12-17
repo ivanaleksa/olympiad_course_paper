@@ -106,26 +106,37 @@ class OlympiadApp:
         # Destroy existing table and buttons
         if self.current_table:
             self.current_table.destroy()
+            self.current_table = None
         if self.new_record_button:
             self.new_record_button.destroy()
+            self.new_record_button = None
         if self.columns_filter_button:
             self.columns_filter_button.destroy()
+            self.columns_filter_button = None
         if self.new_sorting_button:
             self.new_sorting_button.destroy()
+            self.new_sorting_button = None
         if self.update_row_button:
             self.update_row_button.destroy()
+            self.update_row_button = None
         if self.delete_row_button:
             self.delete_row_button.destroy()
+            self.delete_row_button = None
         if self.refresh_button:
             self.refresh_button.destroy()
+            self.refresh_button = None
         if self.medal_per_country_button:
             self.medal_per_country_button.destroy()
+            self.medal_per_country_button = None
         if self.participant_results_button:
             self.participant_results_button.destroy()
+            self.participant_results_button = None
         if self.schedule_of_starts_button:
             self.schedule_of_starts_button.destroy()
+            self.schedule_of_starts_button = None
         if self.save_csv_button:
             self.save_csv_button.destroy()
+            self.save_csv_button = None
 
     def reports_page(self, table_name: str, columns_into_table: tuple = None, needed_conditions: str = '', sorting: dict = {}, all_col: bool = True):
         self.destroy_existing_elements()
@@ -133,31 +144,31 @@ class OlympiadApp:
         df = self.executor.select_query_builder(table_name, columns_into_table, needed_conditions, sorting, all_col)
         columns = tuple(df.columns)
 
-        medal_per_country_button = tk.Button(self.table_frame, text="Medals Per Country", command=lambda: self.reports_page('olympiad.medals_per_cuntries'))
+        medal_per_country_button = tk.Button(self.table_frame, text="Medals Per Country", bg='#7da832', command=lambda: self.reports_page('olympiad.medals_per_cuntries'))
         medal_per_country_button.grid(row=0, column=0, pady=10, padx=5, sticky="nsew")
         self.medal_per_country_button = medal_per_country_button
 
-        participant_results_button = tk.Button(self.table_frame, text="Participant Results", command=lambda: self.reports_page('olympiad.participant_results'))
+        participant_results_button = tk.Button(self.table_frame, text="Participant Results", bg='#7da832', command=lambda: self.reports_page('olympiad.participant_results'))
         participant_results_button.grid(row=0, column=1, pady=10, padx=5, sticky="nsew")
         self.participant_results_button = participant_results_button
 
-        schedule_of_starts_button = tk.Button(self.table_frame, text="Schedule Of Starts", command=lambda: self.reports_page('olympiad.start_schedule_on_date'))
+        schedule_of_starts_button = tk.Button(self.table_frame, text="Schedule Of Starts", bg='#7da832', command=lambda: self.reports_page('olympiad.start_schedule_on_date'))
         schedule_of_starts_button.grid(row=0, column=2, pady=10, padx=5, sticky="nsew")
         self.schedule_of_starts_button = schedule_of_starts_button
 
         new_sorting_button = tk.Button(self.table_frame, text="Sorting Columns", command=lambda: self.sorting_columns_dialog(table_name, columns))
-        new_sorting_button.grid(row=1, column=0, pady=10, padx=5, sticky="nsew")
+        new_sorting_button.grid(row=0, column=3, pady=10, padx=5, sticky="nsew")
         self.new_sorting_button = new_sorting_button
 
-        save_csv_button = tk.Button(self.table_frame, text="Save As CSV", command=lambda: self.save_to_csv(df))
-        save_csv_button.grid(row=1, column=1, pady=10, padx=5, sticky="nsew")
-        self.save_csv_button = save_csv_button
-
         columns_filter_button = tk.Button(self.table_frame, text="Filter Columns", command=lambda: self.open_filter_dialog(table_name, columns, df))
-        columns_filter_button.grid(row=1, column=2, pady=10, padx=5, sticky="nsew")
+        columns_filter_button.grid(row=0, column=4, pady=10, padx=5, sticky="nsew")
         self.columns_filter_button = columns_filter_button
 
-         # Add a table
+        save_csv_button = tk.Button(self.table_frame, text="Save As CSV", command=lambda: self.save_to_csv(df), bg="#32a852")
+        save_csv_button.grid(row=0, column=5, pady=10, padx=5, sticky="nsew")
+        self.save_csv_button = save_csv_button
+
+        # Add a table
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
         self.tree.column("#0", width=0, stretch=False)
         for col in self.tree["columns"]:
@@ -167,15 +178,21 @@ class OlympiadApp:
         for index, row in df.iterrows():
             self.tree.insert("", tk.END, values=[row[column] for column in df.columns])
 
-        self.tree.grid(row=2, column=0, columnspan=3, pady=10, padx=5, sticky="nsew")
+        self.tree.grid(row=1, column=0, columnspan=6, pady=10, padx=5, sticky="nsew")
 
         self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.columnconfigure(1, weight=1)
         self.table_frame.columnconfigure(2, weight=1)
+        self.table_frame.columnconfigure(3, weight=1)
+        self.table_frame.columnconfigure(4, weight=1)
+        self.table_frame.columnconfigure(5, weight=1)
 
         self.table_frame.grid_columnconfigure(0, uniform="buttons")
         self.table_frame.grid_columnconfigure(1, uniform="buttons")
         self.table_frame.grid_columnconfigure(2, uniform="buttons")
+        self.table_frame.grid_columnconfigure(3, uniform="buttons")
+        self.table_frame.grid_columnconfigure(4, uniform="buttons")
+        self.table_frame.grid_columnconfigure(5, uniform="buttons")
 
         self.current_table = self.tree
 
