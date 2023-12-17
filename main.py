@@ -18,6 +18,9 @@ class OlympiadApp:
         self.delete_row_button = None
         self.update_row_button = None
         self.refresh_button = None
+        self.medal_per_country_button = None
+        self.participant_results_button = None
+        self.schedule_of_starts_button = None
 
         self.new_record_window = None
         self.new_update_window = None
@@ -94,8 +97,8 @@ class OlympiadApp:
         self.create_and_fill_table('olympiad.countries')
 
     def report_option(self):
-        self.label.config(text="You selected Option 7")
-        self.destroy_existing_elements()
+        self.label.config(text="Report Generator")
+        self.reports_page()
 
     def destroy_existing_elements(self):
         # Destroy existing table and buttons
@@ -113,9 +116,50 @@ class OlympiadApp:
             self.delete_row_button.destroy()
         if self.refresh_button:
             self.refresh_button.destroy()
+        if self.medal_per_country_button:
+            self.medal_per_country_button.destroy()
+        if self.participant_results_button:
+            self.participant_results_button.destroy()
+        if self.schedule_of_starts_button:
+            self.schedule_of_starts_button.destroy()
+
+    def reports_page(self):
+        self.destroy_existing_elements()
+
+        medal_per_country_button = tk.Button(self.table_frame, text="Medals Per Country")
+        medal_per_country_button.grid(row=0, column=0, pady=10, padx=5, sticky=tk.S)
+        self.medal_per_country_button = medal_per_country_button
+
+        participant_results_button = tk.Button(self.table_frame, text="Participant Results")
+        participant_results_button.grid(row=0, column=1, pady=10, padx=5, sticky=tk.S)
+        self.participant_results_button = participant_results_button
+
+        schedule_of_starts_button = tk.Button(self.table_frame, text="Schedule Of Starts")
+        schedule_of_starts_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
+        self.schedule_of_starts_button = schedule_of_starts_button
+
+        self.table_frame.columnconfigure(0, weight=1)
+        self.table_frame.columnconfigure(1, weight=1)
+        self.table_frame.columnconfigure(2, weight=1)
+
+        self.table_frame.grid_columnconfigure(0, uniform="buttons")
+        self.table_frame.grid_columnconfigure(1, uniform="buttons")
+        self.table_frame.grid_columnconfigure(2, uniform="buttons")
+
+
 
     def create_and_fill_table(self, table_name: str, columns_into_table: tuple = None, needed_conditions: str = '', sorting: dict = {}, all_col: bool = True) -> None:
         self.destroy_existing_elements()
+        appropriate_functions = {
+            'olympiad.results_table_view': self.open_new_record_results_dialog,
+            'olympiad.schedule_table_view': self.open_new_record_schedule_dialog
+        }
+        appropriate_functions_update = {
+            'olympiad.results_table_view': self.open_update_results_dialog
+        }
+        appropriate_functions_delete = {
+            'olympiad.results_table_view': self.open_delete_results_dialog
+        }
         df = self.executor.select_query_builder(table_name, columns_into_table, needed_conditions, sorting, all_col)
         columns = tuple(df.columns)
 
@@ -124,15 +168,15 @@ class OlympiadApp:
         columns_filter_button.grid(row=0, column=0, pady=10, padx=5, sticky=tk.S)
         self.columns_filter_button = columns_filter_button
 
-        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: self.open_new_record_dialog(columns, table_name))
+        new_record_button = tk.Button(self.table_frame, text="New Record", command=lambda: appropriate_functions.get(table_name, self.open_new_record_dialog)(columns, table_name))
         new_record_button.grid(row=0, column=1, pady=10, padx=5, sticky=tk.S)
         self.new_record_button = new_record_button
 
-        update_row_button = tk.Button(self.table_frame, text="Update Record", command=lambda: self.update_record_dialog(table_name, columns))
+        update_row_button = tk.Button(self.table_frame, text="Update Record", command=lambda: appropriate_functions_update.get(table_name, self.update_record_dialog)(table_name, columns))
         update_row_button.grid(row=0, column=2, pady=10, padx=5, sticky=tk.S)
         self.update_row_button = update_row_button
 
-        delete_row_button = tk.Button(self.table_frame, text="Delete Record", command=lambda: self.delete_record_dialog(table_name))
+        delete_row_button = tk.Button(self.table_frame, text="Delete Record", command=lambda: appropriate_functions_delete.get(table_name, self.delete_record_dialog)(table_name))
         delete_row_button.grid(row=0, column=3, pady=10, padx=5, sticky=tk.S)
         self.delete_row_button = delete_row_button
 
@@ -197,6 +241,162 @@ class OlympiadApp:
         # Add a "Save" button to save the new record to the database
         save_button = tk.Button(self.new_record_window, text="Save", command=lambda: self.save_new_record(entry_vars, columns, table_name))
         save_button.pack(pady=10)
+
+    def open_new_record_results_dialog(self, columns: tuple, table_name: str):
+        self.new_record_window = tk.Toplevel(self.master)
+        self.new_record_window.title("New Record")
+
+        label = tk.Label(self.new_record_window, text="Enter details for a new record:")
+        label.pack()
+
+        """Enter fields for filling"""
+        all_sport_type_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_type').iterrows()]
+        all_participant_names = [str(row['id']) + ': ' + row['name'] + " " + row['surname'] for index, row in self.executor.select_query_builder('olympiad.participants').iterrows()]
+        all_sport_ground_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_grounds').iterrows()]
+
+        label = tk.Label(self.new_record_window, text="Choose sport type:")
+        label.pack()
+        sport_type_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_record_window, textvariable=sport_type_var, values=all_sport_type_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_record_window, text="Choose participant:")
+        label.pack()
+        participant_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_record_window, textvariable=participant_var, values=all_participant_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_record_window, text="Choose sport ground:")
+        label.pack()
+        sport_ground_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_record_window, textvariable=sport_ground_var, values=all_sport_ground_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_record_window, text="Enter Result (sec) or keep it empry")
+        label.pack()
+        sec_result_var = tk.StringVar()
+        entry = tk.Entry(self.new_record_window, textvariable=sec_result_var)
+        entry.pack()
+
+        label = tk.Label(self.new_record_window, text="Enter place:")
+        label.pack()
+        place_result_var = tk.StringVar()
+        entry = tk.Entry(self.new_record_window, textvariable=place_result_var)
+        entry.pack()
+
+        insert_button = tk.Button(self.new_record_window, text="Insert", command=lambda: self.insert_result_record(table_name, sport_type_var, participant_var, sport_ground_var, sec_result_var, place_result_var))
+        insert_button.pack(pady=10)
+
+    def insert_result_record(self, table_name, sport_type_var, participant_var, sport_ground_var, sec_result_var, place_result_var):
+        sport_type_id = sport_type_var.get().split(': ')[0]
+        participant_id = participant_var.get().split(': ')[0]
+        sport_ground_id = sport_ground_var.get().split(': ')[0]
+        sec_result = sec_result_var.get()
+        place_result = place_result_var.get()
+
+        self.executor.insert_row_for_result('olympiad.start_results', ('id', 'sport_type_id', 'participant_id', 'sport_ground_id', 'result_sec', 'position'), [sport_type_id, participant_id, sport_ground_id, sec_result if sec_result != '' else 0, place_result])
+
+        self.new_record_window.destroy()
+        self.create_and_fill_table(table_name)
+
+    def open_update_results_dialog(self, table_name, columns):
+        self.new_update_window = tk.Toplevel(self.master)
+        self.new_update_window.title("Update Record")
+
+        label = tk.Label(self.new_update_window, text="If you don't want to change some fields just keep it empty.")
+        label.pack()
+
+        label = tk.Label(self.new_update_window, text="Enter updating row's id:")
+        label.pack()
+
+        entry_id_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=entry_id_var)
+        entry.pack()
+
+        """Enter fields for filling"""
+        all_sport_type_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_type').iterrows()]
+        all_participant_names = [str(row['id']) + ': ' + row['name'] + " " + row['surname'] for index, row in self.executor.select_query_builder('olympiad.participants').iterrows()]
+        all_sport_ground_names = [str(row['id']) + ': ' + row['name'] for index, row in self.executor.select_query_builder('olympiad.sports_grounds').iterrows()]
+
+        label = tk.Label(self.new_update_window, text="Choose sport type:")
+        label.pack()
+        sport_type_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_update_window, textvariable=sport_type_var, values=all_sport_type_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_update_window, text="Choose participant:")
+        label.pack()
+        participant_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_update_window, textvariable=participant_var, values=all_participant_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_update_window, text="Choose sport ground:")
+        label.pack()
+        sport_ground_var = tk.StringVar()
+        combobox = ttk.Combobox(self.new_update_window, textvariable=sport_ground_var, values=all_sport_ground_names)
+        combobox.pack()
+
+        label = tk.Label(self.new_update_window, text="Enter Result (sec) or keep it empry")
+        label.pack()
+        sec_result_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=sec_result_var)
+        entry.pack()
+
+        label = tk.Label(self.new_update_window, text="Enter place:")
+        label.pack()
+        place_result_var = tk.StringVar()
+        entry = tk.Entry(self.new_update_window, textvariable=place_result_var)
+        entry.pack()
+
+        save_button = tk.Button(self.new_update_window, text="Update", command=lambda: self.update_result_record(table_name, entry_id_var, sport_type_var, participant_var, sport_ground_var, sec_result_var, place_result_var))
+        save_button.pack(pady=10)
+
+    def update_result_record(self, table_name, entry_id_var, sport_type_var, participant_var, sport_ground_var, sec_result_var, place_result_var):
+        id_ = entry_id_var.get()
+        sport_type_id = sport_type_var.get().split(': ')[0]
+        participant_id = participant_var.get().split(': ')[0]
+        sport_ground_id = sport_ground_var.get().split(': ')[0]
+        sec_result = sec_result_var.get()
+        place_result = place_result_var.get()
+
+        values = {'sport_type_id': sport_type_id, 'participant_id': participant_id, 
+        'sport_ground_id': sport_ground_id, 'result_sec': sec_result, 'position': place_result}
+        values = {key: values[key] for key in values if values[key] != ''}
+
+        self.executor.update_row_for_result('olympiad.start_results', id_, values)
+
+        self.new_update_window.destroy()
+        self.create_and_fill_table(table_name)
+
+    def open_delete_results_dialog(self, table_name: str):
+        self.new_delete_window = tk.Toplevel(self.master)
+        self.new_delete_window.title('Delete Record')
+
+        label = tk.Label(self.new_delete_window, text="If you want to delete several records just write their ids with comma, like 19,20,21")
+        label.pack()
+
+        label = tk.Label(self.new_delete_window, text="Enter deleting row's id:")
+        label.pack()
+
+        entry_id_var = tk.StringVar()
+        entry = tk.Entry(self.new_delete_window, textvariable=entry_id_var)
+        entry.pack()
+
+        save_button = tk.Button(self.new_delete_window, text="Delete", command=lambda: self.delete_result_record(table_name, entry_id_var))
+        save_button.pack(pady=10)
+
+    def delete_result_record(self, table_name, entry_id_var):
+        id_ = entry_id_var.get()
+        if ',' in id_:
+            for current_id in id_.split(','):
+                self.executor.delete_row_query_builder('olympiad.start_results', current_id)
+        else:
+            self.executor.delete_row_query_builder('olympiad.start_results', id_)
+        self.new_delete_window.destroy()
+        self.create_and_fill_table(table_name)
+
+    def open_new_record_schedule_dialog(self, columns:tuple, table_name: str):
+        print("Hello")
 
     def save_new_record(self, entry_vars: list, columns:tuple, table_name: str):
         entry_values = [entry_var.get() for entry_var in entry_vars]
