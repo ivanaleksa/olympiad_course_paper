@@ -643,10 +643,11 @@ class OlympiadApp:
             if entry_values[column] == '':
                 continue
             string = ''
-            if any(it in entry_values[column] for it in ('>', '>=', '=', '<', '<=')):
+            if self.is_valid_date(entry_values[column]):
+                cond, value = tuple(entry_values[column].split())
+                string =  column + ' ' + cond + ' ' + "'" + value + "'"
+            elif any(it in entry_values[column] for it in ('>', '>=', '=', '<', '<=')):
                 string = column + ' ' + entry_values[column]
-            elif self.is_valid_date(entry_values[column]):
-                string =  column + " = '" + entry_values[column] + "'"
             else:
                 string = column + " ~ '.*" + entry_values[column] + ".*'"
             result.append(string)
@@ -654,6 +655,8 @@ class OlympiadApp:
 
     def is_valid_date(self, date_string, date_format='%Y-%m-%d'):
         try:
+            if ' ' in date_string:
+                date_string = date_string.split()[1]
             datetime.strptime(date_string, date_format)
             return True
         except ValueError:
@@ -776,3 +779,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
